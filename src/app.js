@@ -1,0 +1,55 @@
+/**
+ * Express application assembly.
+ *
+ * Middleware order matters and follows the spec:
+ *   1. Global logging
+ *   2. Content-Type enforcement
+ *   3. JSON body parsing (setup requirement)
+ *   4. Routes
+ *   5. 404 handler (catches undefined routes)
+ *   6. Global error handler (MUST be registered last)
+ */
+const express = require('express');
+
+const logger = require('./middleware/logger');
+const requireJsonContentType = require('./middleware/contentType');
+const taskRoutes = require('./routes/taskRoutes');
+
+const app = express();
+
+// 1) Log every request (method, URL, timestamp).
+app.use(logger);
+
+// 2) Reject POST/PUT requests that do not declare Content-Type: application/json.
+app.use(requireJsonContentType);
+
+// 3) Parse incoming JSON request bodies into req.body.
+app.use(express.json());
+
+// 4) Route definitions.
+app.use('/tasks', taskRoutes);
+
+// 5) 404 handler — any request that matched no route above lands here.
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: `Route not found: ${req.method} ${req.originalUrl}`
+  });
+});
+
+// 6) Global error handler — last piece of middleware (4 args => error handler).
+//    Logs the real error internally but only sends a generic message to the
+//    client, so internal details and stack traces are never leaked.
+app.use((err, req, res, _next) => {
+  // Safely log non-Error throws too (e.g. a handler throwing a string).
+  const detail = err instanceof Error ? err.message : String(err);
+  console.error(`[${new Date().toISOString()}] Unhandled error: ${detail}`);
+
+  // Client errors (e.g. malformed JSON from express.json()) carry a 4xx status.
+  const status = err.status || err.statusCode || 500;
+  const message = status >= 500 ? 'Internal server error' : 'Invalid request';
+
+  res.status(status).json({ success: false, error: message });
+});
+
+module.exports = app;

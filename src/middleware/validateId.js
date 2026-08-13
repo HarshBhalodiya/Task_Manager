@@ -1,21 +1,24 @@
 /**
  * ID format validation middleware.
  *
- * Runs before the PUT/DELETE route handlers and guarantees that
- * `req.params.id` is a positive integer. Invalid ids are rejected with a 400;
- * valid ids are converted to a Number so controllers can compare them safely.
+ * Runs before the :id route handlers and guarantees that `req.params.id`
+ * is a valid MongoDB ObjectId (a 24-character hex string). Invalid ids are
+ * rejected with a 400 so a malformed id never reaches Mongoose (which would
+ * otherwise raise a CastError).
  */
+
+// MongoDB ObjectIds are 24-character hex strings (e.g. "507f1f77bcf86cd799439011").
+const objectIdPattern = /^[0-9a-fA-F]{24}$/;
+
 module.exports = function validateId(req, res, next) {
   const { id } = req.params;
 
-  // Must be present and contain only digits (e.g. "1", "42" — not "abc", "-1", "1.5").
-  if (id === undefined || !/^\d+$/.test(id)) {
+  if (id === undefined || !objectIdPattern.test(id)) {
     return res.status(400).json({
       success: false,
-      error: `Invalid task id "${id}": must be a positive integer`
+      error: `Invalid task id "${id}": must be a valid ObjectId`
     });
   }
 
-  req.params.id = Number(id);
   next();
 };

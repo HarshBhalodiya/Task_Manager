@@ -1,88 +1,90 @@
 /**
- * Task controllers — the only layer that talks to the task store.
+ * Task controllers — the only layer that talks to MongoDB via Mongoose.
  *
  * Every response uses the same JSON envelope:
  *   success: { success: true,  data: <payload> }
  *   failure: { success: false, error: <message> }
+ *
+ * All handlers are async and wrapped in try/catch; unexpected errors are
+ * forwarded to the global error handler with next(err).
  */
-const store = require('../data/tasks');
+const Task = require('../../models/Task');
 
-/** GET /tasks → 200 with the full task list. */
-function getAll(req, res) {
-  res.status(200).json({ success: true, data: store.getAll() });
+/** GET /tasks → 200 with the full task list (newest first). */
+async function getAll(req, res, next) {
+  try {
+    const tasks = await Task.find().sort({ createdAt: -1 });
+    res.status(200).json({ success: true, data: tasks });
+  } catch (err) {
+    next(err);
+  }
 }
 
-/** POST /tasks → 201 with the created task. Validates the request body first. */
-function create(req, res) {
-  const { title, done } = req.body || {};
+/** GET /tasks/:id → 200 with one task, or 404 when it does not exist. */
+async function getById(req, res, next) {
+  try {
+    const task = await Task.findById(req.params.id);
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        error: `Task with id ${req.params.id} not found`
+      });
+    }
 
-  // Title is required and must be a non-empty string.
-  if (typeof title !== 'string' || title.trim() === '') {
-    return res.status(400).json({
-      success: false,
-      error: 'Task title is required and must be a non-empty string'
-    });
+    res.status(200).json({ success: true, data: task });
+  } catch (err) {
+    next(err);
   }
-
-  // "done" is optional; when provided it must be a boolean.
-  if (done !== undefined && typeof done !== 'boolean') {
-    return res.status(400).json({
-      success: false,
-      error: '"done" must be a boolean when provided'
-    });
-  }
-
-  const task = store.create(title.trim(), done === true);
-  res.status(201).json({ success: true, data: task });
 }
 
-/** PUT /tasks/:id → 200 with the updated task, or 404 when the task does not exist. */
-function update(req, res) {
-  const { id } = req.params;
-  const { title, done } = req.body || {};
-
-  // Same field-level validation as POST (fields are optional on update).
-  if (title !== undefined && (typeof title !== 'string' || title.trim() === '')) {
-    return res.status(400).json({
-      success: false,
-      error: 'Task title must be a non-empty string'
-    });
+/** POST /tasks → 201 with the created task. Schema validation runs in Mongoose. */
+async function create(req, res, next) {
+  try {
+    const task = await Task.create(req.body);
+    res.status(201).json({ success: true, data: task });
+  } catch (err) {
+    next(err);
   }
-  if (done !== undefined && typeof done !== 'boolean') {
-    return res.status(400).json({
-      success: false,
-      error: '"done" must be a boolean when provided'
+}
+
+/** PUT /tasks/:id → 200 with the updated task, or 404 when it does not exist. */
+async function update(req, res, next) {
+  try {
+    // runValidators ensures schema rules (e.g. required title) also apply on update.
+    const task = await Task.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true
     });
+
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        error: `Task with id ${req.params.id} not found`
+      });
+    }
+
+    res.status(200).json({ success: true, data: task });
+  } catch (err) {
+    next(err);
   }
-
-  // Build the fields object with only what the client actually sent.
-  const fields = {};
-  if (title !== undefined) fields.title = title.trim();
-  if (done !== undefined) fields.done = done;
-
-  const task = store.update(id, fields);
-  if (!task) {
-    return res.status(404).json({
-      success: false,
-      error: `Task with id ${id} not found`
-    });
-  }
-
-  res.status(200).json({ success: true, data: task });
 }
 
 /** DELETE /tasks/:id → 200 with the deleted task, or 404 when it does not exist. */
-function remove(req, res) {
-  const task = store.remove(req.params.id);
+async function remove(req, res, next) {
+  try {
+    const task = await Task.findByIdAndDelete(req.params.id);
 
-  if (!task) {
-    return res.status(404).json({
-      success: false,
-      error: `Task with id ${req.params.id} not found`
-    });
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        error: `Task with id ${req.params.id} not found`
+      });
+    }
+
+    res.status(200).json({ success: true, data: task });
+  } catch (err) {
+    next(err);
   }
-
-  res.status(200).json({ success: true, data: task });
 }
 
-module.exports = { getAll, create, update, remove };
+module.exports = { getAll, getById, create, update, remove };

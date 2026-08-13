@@ -41,6 +41,28 @@ app.use((req, res) => {
 //    Logs the real error internally but only sends a generic message to the
 //    client, so internal details and stack traces are never leaked.
 app.use((err, req, res, _next) => {
+  // Mongoose validation failures (e.g. missing title) become a clean 400 with
+  // per-field messages instead of leaking the raw ValidationError object.
+  if (err.name === 'ValidationError') {
+    const details = {};
+    for (const field in err.errors) {
+      details[field] = err.errors[field].message;
+    }
+    return res.status(400).json({
+      success: false,
+      error: 'Validation failed',
+      details
+    });
+  }
+
+  // Mongoose cast failures (e.g. a field with the wrong type) are client errors too.
+  if (err.name === 'CastError') {
+    return res.status(400).json({
+      success: false,
+      error: `Invalid value for field "${err.path}"`
+    });
+  }
+
   // Safely log non-Error throws too (e.g. a handler throwing a string).
   const detail = err instanceof Error ? err.message : String(err);
   console.error(`[${new Date().toISOString()}] Unhandled error: ${detail}`);

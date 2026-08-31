@@ -10,7 +10,7 @@
  *   6. Global error handler (MUST be registered last)
  */
 const express = require('express');
-
+const cors = require('cors');
 const logger = require('./middleware/logger');
 const requireJsonContentType = require('./middleware/contentType');
 const taskRoutes = require('./routes/taskRoutes');
@@ -24,6 +24,7 @@ app.use(logger);
 app.use(requireJsonContentType);
 
 // 3) Parse incoming JSON request bodies into req.body.
+app.use(cors());
 app.use(express.json());
 
 // 4) Route definitions.

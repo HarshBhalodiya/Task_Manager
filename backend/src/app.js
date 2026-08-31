@@ -11,9 +11,11 @@
  */
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const logger = require('./middleware/logger');
 const requireJsonContentType = require('./middleware/contentType');
 const taskRoutes = require('./routes/taskRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 
@@ -27,8 +29,17 @@ app.use(requireJsonContentType);
 app.use(cors());
 app.use(express.json());
 
+// Serve static frontend files
+app.use(express.static(path.join(__dirname, '../../frontend')));
+
 // 4) Route definitions.
+app.use('/auth', authRoutes);
 app.use('/tasks', taskRoutes);
+
+// Serve index.html for the root route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../frontend/index.html'));
+});
 
 // 5) 404 handler — any request that matched no route above lands here.
 app.use((req, res) => {

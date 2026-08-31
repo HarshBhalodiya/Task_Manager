@@ -1,77 +1,29 @@
-import { useState, useEffect } from 'react'
-import Header from './components/Header'
-import TaskForm from './components/TaskForm'
-import FilterButtons from './components/FilterButtons'
-import TaskList from './components/TaskList'
-import EditModal from './components/EditModal'
-import { useTasks } from './hooks/useTasks'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Dashboard from './pages/Dashboard'
+import ProtectedRoute from './components/ProtectedRoute'
 
 function App() {
-  const {
-    tasks,
-    loading,
-    error,
-    addTask,
-    updateTask,
-    deleteTask,
-    toggleTaskComplete,
-    loadTasks
-  } = useTasks()
-
-  const [currentFilter, setCurrentFilter] = useState('all')
-  const [editingTask, setEditingTask] = useState(null)
-
-  useEffect(() => {
-    loadTasks()
-  }, [])
-
-  const filteredTasks = tasks.filter(task => {
-    if (currentFilter === 'all') return true
-    if (currentFilter === 'active') return !task.completed
-    if (currentFilter === 'completed') return task.completed
-    return true
-  })
-
-  const activeCount = tasks.filter(t => !t.completed).length
-
-  const handleEditClick = (task) => {
-    setEditingTask(task)
-  }
-
-  const handleEditSubmit = async (taskData) => {
-    await updateTask(editingTask._id, taskData)
-    setEditingTask(null)
-  }
-
   return (
-    <div className="container">
-      <Header />
-
-      <TaskForm onSubmit={addTask} />
-
-      <FilterButtons
-        currentFilter={currentFilter}
-        onFilterChange={setCurrentFilter}
-      />
-
-      <TaskList
-        tasks={filteredTasks}
-        activeCount={activeCount}
-        onToggleComplete={toggleTaskComplete}
-        onEdit={handleEditClick}
-        onDelete={deleteTask}
-        loading={loading}
-        error={error}
-      />
-
-      {editingTask && (
-        <EditModal
-          task={editingTask}
-          onClose={() => setEditingTask(null)}
-          onSubmit={handleEditSubmit}
-        />
-      )}
-    </div>
+    <Router>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </Router>
   )
 }
 

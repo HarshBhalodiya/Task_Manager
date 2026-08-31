@@ -1,6 +1,7 @@
 /**
  * Task routes.
  *
+ * All routes are protected with JWT authentication middleware.
  * The validateId middleware is applied only to routes that carry an :id
  * parameter, so malformed ObjectIds never reach the controller code.
  */
@@ -9,6 +10,10 @@ const router = express.Router();
 
 const taskController = require('../controllers/taskController');
 const validateId = require('../middleware/validateId');
+const auth = require('../middleware/auth');
+
+// Apply authentication to all task routes
+router.use(auth);
 
 // Collection routes.
 router.get('/', taskController.getAll);

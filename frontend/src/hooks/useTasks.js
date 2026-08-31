@@ -1,6 +1,14 @@
 import { useState } from 'react'
 
-const API_URL = 'http://localhost:5000/tasks'
+const API_URL = 'http://localhost:20128/tasks'
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token')
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  }
+}
 
 export function useTasks() {
   const [tasks, setTasks] = useState([])
@@ -11,8 +19,17 @@ export function useTasks() {
     setLoading(true)
     setError(null)
     try {
-      const response = await fetch(API_URL)
+      const response = await fetch(API_URL, {
+        headers: getAuthHeaders()
+      })
       const data = await response.json()
+
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        window.location.href = '/login'
+        return
+      }
 
       if (data.success) {
         setTasks(data.data)
@@ -20,7 +37,7 @@ export function useTasks() {
         setError('Failed to load tasks')
       }
     } catch (err) {
-      setError('Error connecting to server. Make sure backend is running on port 5000.')
+      setError('Error connecting to server. Make sure backend is running.')
       console.error('Error loading tasks:', err)
     } finally {
       setLoading(false)
@@ -31,13 +48,18 @@ export function useTasks() {
     try {
       const response = await fetch(API_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(taskData)
       })
 
       const data = await response.json()
+
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        window.location.href = '/login'
+        return { success: false, error: 'Session expired' }
+      }
 
       if (data.success) {
         setTasks(prev => [data.data, ...prev])
@@ -55,13 +77,18 @@ export function useTasks() {
     try {
       const response = await fetch(`${API_URL}/${taskId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: getAuthHeaders(),
         body: JSON.stringify(taskData)
       })
 
       const data = await response.json()
+
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        window.location.href = '/login'
+        return { success: false, error: 'Session expired' }
+      }
 
       if (data.success) {
         setTasks(prev => prev.map(t => t._id === taskId ? data.data : t))
@@ -89,10 +116,18 @@ export function useTasks() {
 
     try {
       const response = await fetch(`${API_URL}/${taskId}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders()
       })
 
       const data = await response.json()
+
+      if (response.status === 401) {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        window.location.href = '/login'
+        return { success: false, error: 'Session expired' }
+      }
 
       if (data.success) {
         setTasks(prev => prev.filter(t => t._id !== taskId))

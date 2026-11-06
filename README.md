@@ -298,6 +298,21 @@ Full measurements, Profiler notes and reproduction steps: [`docs/PRACTICAL8_PERF
 ≈20.8× faster on repeated reads (95.2 % less time). Full write-up, invalidation proof and
 reproduction steps: [`docs/PRACTICAL9_CACHING.md`](docs/PRACTICAL9_CACHING.md).
 
+## ⚡ Asynchronous Event-Driven Notifications (Practical 10)
+
+`POST /tasks` and `DELETE /tasks/:id` emit `task-created` / `task-deleted` events on a
+shared Node.js built-in `EventEmitter`, and the API responds before the listeners finish.
+
+- Event emitter: `backend/src/events/events.js`
+- Listeners: `backend/src/events/listeners.js` (`task-created`, `task-deleted`, `error`)
+- Emitted from: `backend/src/controllers/taskController.js` (after the response is sent)
+- Registered at boot: `backend/server.js`
+- The `task-created` listener uses a 2 s delay to make the ordering visible:
+  the `[API] Response sent` timestamp prints before the `[Notification]` timestamp.
+- A separate `error` listener catches any error thrown inside a listener instead of crashing.
+
+Full write-up and reproduction steps: [`docs/PRACTICAL10_EVENT_DRIVEN.md`](docs/PRACTICAL10_EVENT_DRIVEN.md).
+
 ## 📄 License
 
 MIT License - Feel free to use this project for educational purposes.

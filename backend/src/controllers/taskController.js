@@ -10,6 +10,7 @@
  */
 const Task = require('../../models/Task');
 const cache = require('../cache/cache');
+const taskEvents = require('../events/events');
 
 /**
  * GET /tasks → 200 with the full task list for authenticated user (newest first).
@@ -81,7 +82,18 @@ async function create(req, res, next) {
     // The cached list is now stale — drop it so the next GET re-reads MongoDB.
     cache.invalidate(cache.tasksKey(req.user.userId));
 
+    // Respond immediately: the client gets its 201 now, before the background
+    // notification handler has finished running.
+    console.log(`[API] Response sent at ${new Date().toISOString()}`);
     res.status(201).json({ success: true, data: task });
+
+    // Emit the background event. Handlers execute asynchronously but
+    // synchronously in the current tick; the listener's real work is deferred
+    // via setTimeout, so this never delays the response above.
+    taskEvents.emit('task-created', {
+      task,
+      user: { id: req.user.userId, email: req.user.email }
+    });
   } catch (err) {
     next(err);
   }
@@ -137,7 +149,13 @@ async function remove(req, res, next) {
       cache.taskKey(req.user.userId, req.params.id)
     ]);
 
+    console.log(`[API] Task "${task.title}" deleted at ${new Date().toISOString()}`);
     res.status(200).json({ success: true, data: task });
+
+    taskEvents.emit('task-deleted', {
+      task,
+      user: { id: req.user.userId, email: req.user.email }
+    });
   } catch (err) {
     next(err);
   }

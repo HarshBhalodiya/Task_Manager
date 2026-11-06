@@ -6,6 +6,11 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const app = require('./src/app');
 
+// Register event listeners before the server starts serving requests, so the
+// 'task-created' / 'task-deleted' events emitted by the controllers are always
+// handled (Practical 10).
+require('./src/events/listeners');
+
 const PORT = process.env.PORT || 5000;
 
 // Only start serving requests after the database connection is established.

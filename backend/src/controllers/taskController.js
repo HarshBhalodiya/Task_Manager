@@ -9,20 +9,54 @@
  * forwarded to the global error handler with next(err).
  */
 const Task = require('../../models/Task');
+const cache = require('../cache/cache');
 
-/** GET /tasks → 200 with the full task list for authenticated user (newest first). */
+/**
+ * GET /tasks → 200 with the full task list for authenticated user (newest first).
+ *
+ * Served straight from the in-memory cache when the user's list was already
+ * fetched inside the TTL window (X-Cache: HIT). On a miss the list is read from
+ * MongoDB and stored under tasks:<userId>.
+ */
 async function getAll(req, res, next) {
   try {
+    const key = cache.tasksKey(req.user.userId);
+    const cached = cache.read(key);
+
+    if (cached) {
+      res.set('X-Cache', 'HIT');
+      return res.status(200).json({ success: true, data: cached });
+    }
+
+    res.set('X-Cache', cache.isEnabled() ? 'MISS' : 'BYPASS');
+
     const tasks = await Task.find({ userId: req.user.userId }).sort({ createdAt: -1 });
+    cache.write(key, tasks);
+
     res.status(200).json({ success: true, data: tasks });
   } catch (err) {
     next(err);
   }
 }
 
-/** GET /tasks/:id → 200 with one task, or 404 when it does not exist. */
+/**
+ * GET /tasks/:id → 200 with one task, or 404 when it does not exist.
+ *
+ * Cached separately from the collection under task:<userId>:<taskId>, so a
+ * single-task read never costs a database round trip twice.
+ */
 async function getById(req, res, next) {
   try {
+    const key = cache.taskKey(req.user.userId, req.params.id);
+    const cached = cache.read(key);
+
+    if (cached) {
+      res.set('X-Cache', 'HIT');
+      return res.status(200).json({ success: true, data: cached });
+    }
+
+    res.set('X-Cache', cache.isEnabled() ? 'MISS' : 'BYPASS');
+
     const task = await Task.findOne({ _id: req.params.id, userId: req.user.userId });
     if (!task) {
       return res.status(404).json({
@@ -30,6 +64,8 @@ async function getById(req, res, next) {
         error: `Task with id ${req.params.id} not found`
       });
     }
+
+    cache.write(key, task);
 
     res.status(200).json({ success: true, data: task });
   } catch (err) {
@@ -41,6 +77,10 @@ async function getById(req, res, next) {
 async function create(req, res, next) {
   try {
     const task = await Task.create({ ...req.body, userId: req.user.userId });
+
+    // The cached list is now stale — drop it so the next GET re-reads MongoDB.
+    cache.invalidate(cache.tasksKey(req.user.userId));
+
     res.status(201).json({ success: true, data: task });
   } catch (err) {
     next(err);
@@ -67,6 +107,12 @@ async function update(req, res, next) {
       });
     }
 
+    // Both the list and this single-task entry are stale after an update.
+    cache.invalidate([
+      cache.tasksKey(req.user.userId),
+      cache.taskKey(req.user.userId, req.params.id)
+    ]);
+
     res.status(200).json({ success: true, data: task });
   } catch (err) {
     next(err);
@@ -84,6 +130,12 @@ async function remove(req, res, next) {
         error: `Task with id ${req.params.id} not found`
       });
     }
+
+    // A deleted task must disappear from the list cache and from its own key.
+    cache.invalidate([
+      cache.tasksKey(req.user.userId),
+      cache.taskKey(req.user.userId, req.params.id)
+    ]);
 
     res.status(200).json({ success: true, data: task });
   } catch (err) {

@@ -1,11 +1,15 @@
+import { lazy, Suspense, useCallback, useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import TaskForm from '../components/TaskForm';
 import FilterButtons from '../components/FilterButtons';
 import TaskList from '../components/TaskList';
-import EditModal from '../components/EditModal';
+import PageLoader from '../components/PageLoader';
 import { useTasks } from '../hooks/useTasks';
-import { useState, useEffect } from 'react';
+
+// The edit modal is only needed after the user clicks "Edit", so it is split
+// into its own chunk instead of being part of the initial Dashboard bundle.
+const EditModal = lazy(() => import('../components/EditModal'));
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -25,7 +29,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     loadTasks();
-  }, []);
+  }, [loadTasks]);
 
   const filteredTasks = tasks.filter(task => {
     if (currentFilter === 'all') return true;
@@ -36,14 +40,16 @@ const Dashboard = () => {
 
   const activeCount = tasks.filter(t => !t.completed).length;
 
-  const handleEditClick = (task) => {
+  // Stable callbacks so memoized TaskItem rows are not re-rendered when an
+  // unrelated task changes (identified with the React DevTools Profiler).
+  const handleEditClick = useCallback((task) => {
     setEditingTask(task);
-  };
+  }, []);
 
-  const handleEditSubmit = async (taskData) => {
+  const handleEditSubmit = useCallback(async (taskData) => {
     await updateTask(editingTask._id, taskData);
     setEditingTask(null);
-  };
+  }, [editingTask, updateTask]);
 
   return (
     <div className="dashboard">
@@ -76,11 +82,13 @@ const Dashboard = () => {
         />
 
         {editingTask && (
-          <EditModal
-            task={editingTask}
-            onClose={() => setEditingTask(null)}
-            onSubmit={handleEditSubmit}
-          />
+          <Suspense fallback={<PageLoader label="Loading editor..." />}>
+            <EditModal
+              task={editingTask}
+              onClose={() => setEditingTask(null)}
+              onSubmit={handleEditSubmit}
+            />
+          </Suspense>
         )}
       </div>
     </div>

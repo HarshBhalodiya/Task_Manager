@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 
-const API_URL = 'http://localhost:20128/tasks'
+// Base URL is configurable per environment; the repo's backend listens on 5000.
+const API_URL = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/tasks`
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token')
@@ -15,7 +16,7 @@ export function useTasks() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
-  const loadTasks = async () => {
+  const loadTasks = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -42,9 +43,9 @@ export function useTasks() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const addTask = async (taskData) => {
+  const addTask = useCallback(async (taskData) => {
     try {
       const response = await fetch(API_URL, {
         method: 'POST',
@@ -71,9 +72,9 @@ export function useTasks() {
       console.error('Error adding task:', err)
       return { success: false, error: 'Error adding task. Check your connection.' }
     }
-  }
+  }, [])
 
-  const updateTask = async (taskId, taskData) => {
+  const updateTask = useCallback(async (taskId, taskData) => {
     try {
       const response = await fetch(`${API_URL}/${taskId}`, {
         method: 'PUT',
@@ -100,16 +101,16 @@ export function useTasks() {
       console.error('Error updating task:', err)
       return { success: false, error: 'Error updating task' }
     }
-  }
+  }, [])
 
-  const toggleTaskComplete = async (taskId) => {
-    const task = tasks.find(t => t._id === taskId)
+  // Accepts the task object so the callback can stay referentially stable.
+  const toggleTaskComplete = useCallback(async (task) => {
     if (!task) return
 
-    return updateTask(taskId, { completed: !task.completed })
-  }
+    return updateTask(task._id, { completed: !task.completed })
+  }, [updateTask])
 
-  const deleteTask = async (taskId) => {
+  const deleteTask = useCallback(async (taskId) => {
     if (!window.confirm('Are you sure you want to delete this task?')) {
       return
     }
@@ -139,7 +140,7 @@ export function useTasks() {
       console.error('Error deleting task:', err)
       return { success: false, error: 'Error deleting task' }
     }
-  }
+  }, [])
 
   return {
     tasks,

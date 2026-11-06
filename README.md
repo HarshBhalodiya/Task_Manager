@@ -260,6 +260,44 @@ npm run dev  # Uses nodemon for auto-restart
 - Frontend: Edit HTML, CSS, or JS files in `frontend/`
 - Database models: Edit files in `backend/models/`
 
+## ⚡ Performance Optimization (Practical 8)
+
+The frontend uses route-based code splitting with `React.lazy()` + `Suspense` and a
+300 ms minimum-delay fallback:
+
+- `Login`, `Register` and `Dashboard` are lazy-loaded in `src/App.jsx`.
+- `EditModal` is lazy-loaded inside the Dashboard (only fetched when the user clicks Edit).
+- `TaskItem` is memoized and the task actions are wrapped in `useCallback` to avoid
+  re-rendering every row when one task changes.
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Initial JS | 247.63 kB (82.71 kB gzip) | 238.22 kB (80.74 kB gzip) |
+| Initial payload (JS + CSS) | 254.99 kB (84.62 kB gzip) | 245.92 kB (82.69 kB gzip) |
+
+Full measurements, Profiler notes and reproduction steps: [`docs/PRACTICAL8_PERFORMANCE.md`](docs/PRACTICAL8_PERFORMANCE.md).
+
+## 🗄️ In-Memory Caching (Practical 9)
+
+`GET /tasks` is served from a `node-cache` instance with a 60-second TTL, and every write
+(`POST`, `PUT`, `DELETE`) invalidates the affected keys so stale data is never returned.
+
+- Cache module: `backend/src/cache/cache.js` (per-user keys `tasks:<userId>`, `task:<userId>:<id>`)
+- Invalidation: after each successful write in `backend/src/controllers/taskController.js`
+- Debug endpoint: `GET /cache/stats` (hits, misses, hit rate, live keys)
+- Response header: `X-Cache: HIT | MISS | BYPASS`
+- `CACHE_ENABLED=false` switches caching off for a fair before/after measurement
+
+| Reading | Without cache | With cache |
+|---------|---------------|------------|
+| 1 | 94.46 ms | 5.38 ms |
+| 2 | 79.12 ms | 3.59 ms |
+| 3 | 76.12 ms | 3.07 ms |
+| **Average** | **83.23 ms** | **4.01 ms** |
+
+≈20.8× faster on repeated reads (95.2 % less time). Full write-up, invalidation proof and
+reproduction steps: [`docs/PRACTICAL9_CACHING.md`](docs/PRACTICAL9_CACHING.md).
+
 ## 📄 License
 
 MIT License - Feel free to use this project for educational purposes.

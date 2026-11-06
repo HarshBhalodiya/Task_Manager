@@ -16,6 +16,7 @@ const logger = require('./middleware/logger');
 const requireJsonContentType = require('./middleware/contentType');
 const taskRoutes = require('./routes/taskRoutes');
 const authRoutes = require('./routes/authRoutes');
+const cache = require('./cache/cache');
 
 const app = express();
 
@@ -26,7 +27,7 @@ app.use(logger);
 app.use(requireJsonContentType);
 
 // 3) Parse incoming JSON request bodies into req.body.
-app.use(cors());
+app.use(cors({ exposedHeaders: ['X-Cache'] }));
 app.use(express.json());
 
 // Serve static frontend files
@@ -35,6 +36,12 @@ app.use(express.static(path.join(__dirname, '../../frontend')));
 // 4) Route definitions.
 app.use('/auth', authRoutes);
 app.use('/tasks', taskRoutes);
+
+// Debug endpoint: cache configuration plus the running hit/miss counters.
+// Counts only — never cached task data — so it is safe to expose.
+app.get('/cache/stats', (req, res) => {
+  res.status(200).json({ success: true, data: cache.stats() });
+});
 
 // Serve index.html for the root route
 app.get('/', (req, res) => {

@@ -1,3 +1,5 @@
+import { memo } from 'react'
+
 function TaskItem({ task, onToggleComplete, onEdit, onDelete }) {
   const formattedDate = new Date(task.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -13,7 +15,7 @@ function TaskItem({ task, onToggleComplete, onEdit, onDelete }) {
         type="checkbox"
         className="task-checkbox"
         checked={task.completed}
-        onChange={() => onToggleComplete(task._id)}
+        onChange={() => onToggleComplete(task)}
       />
       <div className="task-content">
         <div className="task-title">{task.title}</div>
@@ -40,4 +42,4 @@ function TaskItem({ task, onToggleComplete, onEdit, onDelete }) {
   )
 }
 
-export default TaskItem
+export default memo(TaskItem)

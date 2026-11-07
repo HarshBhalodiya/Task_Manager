@@ -16,6 +16,7 @@ const logger = require('./middleware/logger');
 const requireJsonContentType = require('./middleware/contentType');
 const taskRoutes = require('./routes/taskRoutes');
 const authRoutes = require('./routes/authRoutes');
+const aiRoutes = require('./routes/aiRoutes');
 const cache = require('./cache/cache');
 
 const app = express();
@@ -36,6 +37,8 @@ app.use(express.static(path.join(__dirname, '../../frontend')));
 // 4) Route definitions.
 app.use('/auth', authRoutes);
 app.use('/tasks', taskRoutes);
+// AI feature (Practical 13): route is mounted under /api/ai.
+app.use('/api/ai', aiRoutes);
 
 // Debug endpoint: cache configuration plus the running hit/miss counters.
 // Counts only — never cached task data — so it is safe to expose.

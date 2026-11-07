@@ -351,6 +351,35 @@ Stop the stack: `docker compose down` (keeps data) or `docker compose down -v` (
 
 Full write-up: [`docs/PRACTICAL11_DOCKER.md`](docs/PRACTICAL11_DOCKER.md).
 
+## 🤖 AI-Powered Descriptions (Practical 13)
+
+The Task Form has a **Generate description (AI)** button that calls the backend
+`POST /api/ai/generate-description` endpoint to auto-generate a task description
+from the title. The returned text is shown as an **editable suggestion** the user
+can accept or modify.
+
+Security & robustness:
+- **API key is server-side only** — stored in `backend/.env` as `GEMINI_API_KEY`
+  and read exclusively by `backend/src/services/aiService.js`. It never reaches
+  the frontend (add `.env` to `.gitignore` and never commit it).
+- **Graceful degradation** — if the AI call fails/times out, the API returns
+  `fallback:true` and the UI shows a friendly message; the task flow keeps
+  working. (See the fallback disclaimer in `TaskForm.jsx`.)
+- **Rate limiting** — max 1 AI request per task per minute (`aiController.js`).
+- The implementation uses **Node native `fetch`** (Node 18+) against Google's
+  **Gemini** REST API (`gemini-2.0-flash`), so no vendor SDK is needed.
+
+Key files:
+- `backend/src/services/aiService.js` — the only code that calls the AI API.
+- `backend/src/controllers/aiController.js` — route handler + rate limiter.
+- `backend/src/routes/aiRoutes.js` — JWT-protected route.
+- `frontend/src/hooks/useAiDescription.js` — hook for calling the endpoint.
+- `frontend/src/components/TaskForm.jsx` — button, loading state, editable
+  suggestion, and AI disclaimer.
+- Tests: `backend/tests/ai.test.js` (success, fallback, rate-limit, validation).
+
+Full write-up and reproduction steps: [`docs/PRACTICAL13_AI.md`](docs/PRACTICAL13_AI.md).
+
 ## 📄 License
 
 MIT License - Feel free to use this project for educational purposes.

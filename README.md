@@ -2,13 +2,6 @@
 
 A full-stack Task Manager application built with Node.js, Express, MongoDB, and vanilla JavaScript.
 
-## 🚦 CI/CD Status
-
-[![CI Pipeline](https://img.shields.io/github/actions/workflow/status/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/ci.yml?label=CI%20Pipeline&logo=github)](https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/actions/workflows/ci.yml)
-
-> Replace `YOUR_GITHUB_USERNAME` and `YOUR_REPO_NAME` with your actual GitHub account
-> and repository name. The badge reflects the latest `ci.yml` run on `main`.
-> (Practical 12 — see [`docs/PRACTICAL12_CICD.md`](docs/PRACTICAL12_CICD.md).)
 
 ## 📋 Project Structure
 
@@ -268,7 +261,7 @@ npm run dev  # Uses nodemon for auto-restart
 - Frontend: Edit HTML, CSS, or JS files in `frontend/`
 - Database models: Edit files in `backend/models/`
 
-## ⚡ Performance Optimization (Practical 8)
+## ⚡ Performance Optimization 
 
 The frontend uses route-based code splitting with `React.lazy()` + `Suspense` and a
 300 ms minimum-delay fallback:
@@ -283,9 +276,8 @@ The frontend uses route-based code splitting with `React.lazy()` + `Suspense` an
 | Initial JS | 247.63 kB (82.71 kB gzip) | 238.22 kB (80.74 kB gzip) |
 | Initial payload (JS + CSS) | 254.99 kB (84.62 kB gzip) | 245.92 kB (82.69 kB gzip) |
 
-Full measurements, Profiler notes and reproduction steps: [`docs/PRACTICAL8_PERFORMANCE.md`](docs/PRACTICAL8_PERFORMANCE.md).
 
-## 🗄️ In-Memory Caching (Practical 9)
+## 🗄️ In-Memory Caching 
 
 `GET /tasks` is served from a `node-cache` instance with a 60-second TTL, and every write
 (`POST`, `PUT`, `DELETE`) invalidates the affected keys so stale data is never returned.
@@ -304,9 +296,9 @@ Full measurements, Profiler notes and reproduction steps: [`docs/PRACTICAL8_PERF
 | **Average** | **83.23 ms** | **4.01 ms** |
 
 ≈20.8× faster on repeated reads (95.2 % less time). Full write-up, invalidation proof and
-reproduction steps: [`docs/PRACTICAL9_CACHING.md`](docs/PRACTICAL9_CACHING.md).
+reproduction steps
 
-## ⚡ Asynchronous Event-Driven Notifications (Practical 10)
+## ⚡ Asynchronous Event-Driven Notifications 
 
 `POST /tasks` and `DELETE /tasks/:id` emit `task-created` / `task-deleted` events on a
 shared Node.js built-in `EventEmitter`, and the API responds before the listeners finish.
@@ -319,9 +311,9 @@ shared Node.js built-in `EventEmitter`, and the API responds before the listener
   the `[API] Response sent` timestamp prints before the `[Notification]` timestamp.
 - A separate `error` listener catches any error thrown inside a listener instead of crashing.
 
-Full write-up and reproduction steps: [`docs/PRACTICAL10_EVENT_DRIVEN.md`](docs/PRACTICAL10_EVENT_DRIVEN.md).
 
-## 🐳 Containerization with Docker & Docker Compose (Practical 11)
+
+## 🐳 Containerization with Docker & Docker Compose 
 
 The full stack is containerized: a **frontend** (React, built + served), a **backend**
 (Node/Express), and **MongoDB**. Each runs in its own container, connected by an
@@ -349,9 +341,8 @@ The backend reaches MongoDB by its **Compose service name** (`mongodb://mongodb:
 
 Stop the stack: `docker compose down` (keeps data) or `docker compose down -v` (removes data).
 
-Full write-up: [`docs/PRACTICAL11_DOCKER.md`](docs/PRACTICAL11_DOCKER.md).
 
-## 🤖 AI-Powered Descriptions (Practical 13)
+## 🤖 AI-Powered Descriptions 
 
 The Task Form has a **Generate description (AI)** button that calls the backend
 `POST /api/ai/generate-description` endpoint to auto-generate a task description
@@ -378,18 +369,4 @@ Key files:
   suggestion, and AI disclaimer.
 - Tests: `backend/tests/ai.test.js` (success, fallback, rate-limit, validation).
 
-Full write-up and reproduction steps: [`docs/PRACTICAL13_AI.md`](docs/PRACTICAL13_AI.md).
 
-## 📄 License
-
-MIT License - Feel free to use this project for educational purposes.
-
-## 👤 Author
-
-Created as part of AWDF (Advanced Web Development Framework) coursework.
-
-## 🙏 Acknowledgments
-
-- Built with Node.js and Express
-- Database powered by MongoDB Atlas
-- UI inspired by modern web design principles

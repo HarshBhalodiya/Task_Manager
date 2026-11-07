@@ -157,5 +157,9 @@ not blocked by the background work.
 - [x] `listeners.js` — `task-created`, `task-deleted`, `error` listeners
 - [x] `taskController.js` — emits events after `POST`/`DELETE` respond
 - [x] `server.js` — listeners registered at startup
-- [ ] Console-log screenshot/recording showing response-before-handler ordering
+- [x] Console-log evidence — `[API] Response sent at 2026-11-07T04:19:44.063Z` printed
+      before `[Notification] ... created at 2026-11-07T04:19:46.071Z` (2 s handler delay), while
+      the HTTP POST itself returned 201 in 284.8 ms; `task-deleted` shown in the same console and
+      the `error` listener proven with `scripts/demo-error-listener.js`.
+- [x] Submission document `24AIML002_AWDF_P10.docx` with all screenshots
 - [ ] Commit for event-driven async processing

@@ -1,0 +1,8 @@
+# Exclude from the build context so nothing large or secret is sent to the daemon.
+node_modules
+npm-debug.log
+.env
+.env.*
+Dockerfile
+.dockerignore
+README.md

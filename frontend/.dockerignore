@@ -1,0 +1,9 @@
+# Exclude from the build context.
+node_modules
+dist
+.env
+.env.*
+Dockerfile
+.dockerignore
+README.md
+npm-debug.log

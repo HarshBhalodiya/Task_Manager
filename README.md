@@ -313,6 +313,36 @@ shared Node.js built-in `EventEmitter`, and the API responds before the listener
 
 Full write-up and reproduction steps: [`docs/PRACTICAL10_EVENT_DRIVEN.md`](docs/PRACTICAL10_EVENT_DRIVEN.md).
 
+## 🐳 Containerization with Docker & Docker Compose (Practical 11)
+
+The full stack is containerized: a **frontend** (React, built + served), a **backend**
+(Node/Express), and **MongoDB**. Each runs in its own container, connected by an
+internal bridge network (`app-network`), and the whole application starts with a
+single command.
+
+```bash
+cd Task_Manager
+docker compose up --build
+```
+
+Then open **http://localhost:5173** (frontend). The backend API is on
+http://localhost:5000 and MongoDB on localhost:27017.
+
+Key files:
+- `frontend/Dockerfile` — multi-stage build: compiles the React app, then a small
+  runtime image serves only the built static files.
+- `backend/Dockerfile` — builds the Node/Express API (deps installed in-container).
+- `frontend/.dockerignore`, `backend/.dockerignore` — exclude `node_modules` and `.env`.
+- `docker-compose.yml` — defines `frontend`, `backend`, `mongodb`, port mappings,
+  `depends_on`, a named volume (`mongo-data`) so task data persists, and the `app-network`.
+
+The backend reaches MongoDB by its **Compose service name** (`mongodb://mongodb:27017/taskdb`)
+— not `localhost` — because each container has its own network namespace.
+
+Stop the stack: `docker compose down` (keeps data) or `docker compose down -v` (removes data).
+
+Full write-up: [`docs/PRACTICAL11_DOCKER.md`](docs/PRACTICAL11_DOCKER.md).
+
 ## 📄 License
 
 MIT License - Feel free to use this project for educational purposes.

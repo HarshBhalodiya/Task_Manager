@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "test": "jest --ci --passWithNoTests",
+    "lint": "eslint src tests server.js"
   },
   "keywords": [
     "rest",
@@ -23,5 +25,10 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.9.1",
     "node-cache": "^5.1.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
   }
 }

@@ -2,6 +2,14 @@
 
 A full-stack Task Manager application built with Node.js, Express, MongoDB, and vanilla JavaScript.
 
+## 🚦 CI/CD Status
+
+[![CI Pipeline](https://img.shields.io/github/actions/workflow/status/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/ci.yml?label=CI%20Pipeline&logo=github)](https://github.com/YOUR_GITHUB_USERNAME/YOUR_REPO_NAME/actions/workflows/ci.yml)
+
+> Replace `YOUR_GITHUB_USERNAME` and `YOUR_REPO_NAME` with your actual GitHub account
+> and repository name. The badge reflects the latest `ci.yml` run on `main`.
+> (Practical 12 — see [`docs/PRACTICAL12_CICD.md`](docs/PRACTICAL12_CICD.md).)
+
 ## 📋 Project Structure
 
 ```
